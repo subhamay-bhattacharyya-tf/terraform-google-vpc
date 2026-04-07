@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -15,21 +16,22 @@ import (
 
 // vpcConfig mirrors the structure of examples/vpc/basic/vpc_config.json.
 type vpcConfig struct {
-	Name                         string      `json:"name"`
-	Project                      string      `json:"project"`
-	Description                  string      `json:"description"`
-	AutoCreateSubnetworks        bool        `json:"auto_create_subnetworks"`
-	RoutingMode                  string      `json:"routing_mode"`
-	DeleteDefaultRoutesOnCreate  bool        `json:"delete_default_routes_on_create"`
-	Subnets                      []subnetCfg `json:"subnets"`
+	Name                        string      `json:"name"`
+	Project                     string      `json:"project"`
+	Description                 string      `json:"description"`
+	AutoCreateSubnetworks       bool        `json:"auto_create_subnetworks"`
+	RoutingMode                 string      `json:"routing_mode"`
+	DeleteDefaultRoutesOnCreate bool        `json:"delete_default_routes_on_create"`
+	Subnets                     []subnetCfg `json:"subnets"`
 }
 
 type subnetCfg struct {
-	Name                   string `json:"name"`
-	Region                 string `json:"region"`
-	IPCIDRRange            string `json:"ip_cidr_range"`
-	Description            string `json:"description"`
-	PrivateIPGoogleAccess  bool   `json:"private_ip_google_access"`
+	Name                  string        `json:"name"`
+	Region                string        `json:"region"`
+	IPCIDRRange           string        `json:"ip_cidr_range"`
+	Description           string        `json:"description"`
+	PrivateIPGoogleAccess bool          `json:"private_ip_google_access"`
+	SecondaryIPRanges     []interface{} `json:"secondary_ip_ranges"`
 }
 
 // TestVpcBasic creates a real VPC + subnet via the root module, asserts outputs,
@@ -40,7 +42,7 @@ func TestVpcBasic(t *testing.T) {
 	projectID := mustEnv(t, "GOOGLE_CLOUD_PROJECT")
 	unique := strings.ToLower(random.UniqueId())
 
-	vpcName    := fmt.Sprintf("tt-vpc-%s", unique)
+	vpcName := fmt.Sprintf("tt-vpc-%s", unique)
 	subnetName := fmt.Sprintf("tt-subnet-%s", unique)
 
 	cfg := vpcConfig{
@@ -57,24 +59,24 @@ func TestVpcBasic(t *testing.T) {
 				IPCIDRRange:           "10.99.0.0/20",
 				Description:           "Terratest subnet",
 				PrivateIPGoogleAccess: true,
+				SecondaryIPRanges:     []interface{}{},
 			},
 		},
 	}
 
-	cfgJSON, err := json.Marshal(cfg)
+	// Serialize vpc_config into a .tfvars.json file. Passing a complex object
+	// via Vars map causes Terratest to produce invalid HCL; VarFiles + JSON is
+	// the correct approach for object-type variables.
+	tfvarsJSON, err := json.Marshal(map[string]interface{}{"vpc_config": cfg})
 	require.NoError(t, err)
 
-	// Write vpc_config.json to a temp dir alongside the root module.
-	tmpCfgPath := fmt.Sprintf("/tmp/vpc_config_%s.json", unique)
-	require.NoError(t, os.WriteFile(tmpCfgPath, cfgJSON, 0600))
-	defer os.Remove(tmpCfgPath)
+	tfvarsPath := filepath.Join(t.TempDir(), "test.tfvars.json")
+	require.NoError(t, os.WriteFile(tfvarsPath, tfvarsJSON, 0600))
 
 	tfOptions := &terraform.Options{
 		TerraformDir: "..",
 		NoColor:      true,
-		Vars: map[string]interface{}{
-			"vpc_config": cfg,
-		},
+		VarFiles:     []string{tfvarsPath},
 	}
 
 	defer terraform.Destroy(t, tfOptions)
