@@ -1,60 +1,153 @@
-# Terraform Module for GCS Bucket
+# terraform-google-vpc
 
-![Release](https://github.com/subhamay-bhattacharyya-tf/terraform-google-module-template/actions/workflows/ci.yaml/badge.svg)&nbsp;![GCP](https://img.shields.io/badge/GCP-4285F4?logo=googlecloud&logoColor=white)&nbsp;![Commit Activity](https://img.shields.io/github/commit-activity/t/subhamay-bhattacharyya-tf/terraform-google-module-template)&nbsp;![Last Commit](https://img.shields.io/github/last-commit/subhamay-bhattacharyya-tf/terraform-google-module-template)&nbsp;![Release Date](https://img.shields.io/github/release-date/subhamay-bhattacharyya-tf/terraform-google-module-template)&nbsp;![Repo Size](https://img.shields.io/github/repo-size/subhamay-bhattacharyya-tf/terraform-google-module-template)&nbsp;![File Count](https://img.shields.io/github/directory-file-count/subhamay-bhattacharyya-tf/terraform-google-module-template)&nbsp;![Issues](https://img.shields.io/github/issues/subhamay-bhattacharyya-tf/terraform-google-module-template)&nbsp;![Top Language](https://img.shields.io/github/languages/top/subhamay-bhattacharyya-tf/terraform-google-module-template)&nbsp;![Built with Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-623CE4?logo=anthropic&logoColor=white)&nbsp;![Custom Endpoint](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/bsubhamay/476e6e7583432e960e6de16d5223e6a3/raw/terraform-google-module-template.json?)
+![Release](https://github.com/subhamay-bhattacharyya-tf/terraform-google-vpc/actions/workflows/ci.yaml/badge.svg)&nbsp;![GCP](https://img.shields.io/badge/GCP-4285F4?logo=googlecloud&logoColor=white)&nbsp;![Commit Activity](https://img.shields.io/github/commit-activity/t/subhamay-bhattacharyya-tf/terraform-google-vpc)&nbsp;![Last Commit](https://img.shields.io/github/last-commit/subhamay-bhattacharyya-tf/terraform-google-vpc)&nbsp;![Release Date](https://img.shields.io/github/release-date/subhamay-bhattacharyya-tf/terraform-google-vpc)&nbsp;![Repo Size](https://img.shields.io/github/repo-size/subhamay-bhattacharyya-tf/terraform-google-vpc)&nbsp;![File Count](https://img.shields.io/github/directory-file-count/subhamay-bhattacharyya-tf/terraform-google-vpc)&nbsp;![Issues](https://img.shields.io/github/issues/subhamay-bhattacharyya-tf/terraform-google-vpc)&nbsp;![Top Language](https://img.shields.io/github/languages/top/subhamay-bhattacharyya-tf/terraform-google-vpc)&nbsp;![Built with Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-623CE4?logo=anthropic&logoColor=white)&nbsp;![Custom Endpoint](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/bsubhamay/476e6e7583432e960e6de16d5223e6a3/raw/terraform-google-vpc.json?)&nbsp;![Terraform Version](https://img.shields.io/badge/terraform-%3E%3D1.3-blue)&nbsp;![Provider Version](https://img.shields.io/badge/google-%3E%3D7.23-blue)
 
-A Terraform module for creating and managing a **Google Cloud Storage (GCS) bucket** on GCP.
+Terraform module that provisions a `google_compute_network` (VPC) and one or more `google_compute_subnetwork` resources on GCP, driven by a single `vpc_config` JSON object.
+
+---
 
 ## Overview
 
-This module provisions a single `google_storage_bucket` resource via the `terraform-google-module-template` module. It accepts a small set of flat input variables and assembles the required `gcs_config` object, enforcing `uniform_bucket_level_access = true` and `public_access_prevention = "enforced"` by default.
+This module creates a production-ready GCP VPC and its subnets from a single structured `vpc_config` input variable. It manages `google_compute_network` and `google_compute_subnetwork` resources, supports optional secondary IP ranges (for GKE pods/services), and wires all validations — naming rules, CIDR format, routing mode enum, project ID format — into `variables.tf`. The entire public interface is one input variable populated by decoding a JSON file at the call site.
 
-## Requirements
-
-| Requirement | Version |
-|---|---|
-| Terraform | >= 1.3.0 |
-| Google Provider | >= 7.23.0 |
+---
 
 ## Usage
 
 ```hcl
-module "gcs_bucket" {
-  source = "github.com/subhamay-bhattacharyya-tf/terraform-google-module-template"
+locals {
+  vpc_config = jsondecode(file("${path.module}/vpc_config.json"))
+}
 
-  bucket_name = "my-portfolio-bucket"
-  project_id  = "portfolio-site"
-  location    = "US"
-  environment = "prod"
+module "vpc" {
+  source  = "org/vpc/google"
+  version = "~> 1.0"
+
+  vpc_config = local.vpc_config
 }
 ```
 
-## Input Variables
+Where `vpc_config.json` contains:
 
-| Name | Description | Type | Default | Required |
-|---|---|---|---|---|
-| `bucket_name` | Name of the GCS bucket | `string` | — | yes |
-| `project_id` | GCP project ID | `string` | `"portfolio-site"` | no |
-| `region` | GCP region | `string` | `"us-central1"` | no |
-| `location` | GCS bucket location | `string` | `"US"` | no |
-| `storage_class` | Storage class | `string` | `"STANDARD"` | no |
-| `force_destroy` | Force-destroy bucket on destroy | `bool` | `false` | no |
-| `versioning` | Enable object versioning | `bool` | `false` | no |
-| `labels` | Additional labels | `map(string)` | `{}` | no |
-| `project` | Project label value | `string` | `"portfolio-site"` | no |
-| `environment` | Environment label value | `string` | `"dev"` | no |
+```json
+{
+  "name": "prod-vpc",
+  "project": "my-gcp-project",
+  "description": "Production VPC",
+  "auto_create_subnetworks": false,
+  "routing_mode": "REGIONAL",
+  "delete_default_routes_on_create": false,
+  "subnets": [
+    {
+      "name": "prod-subnet-primary",
+      "region": "us-central1",
+      "ip_cidr_range": "10.0.0.0/20",
+      "private_ip_google_access": true,
+      "secondary_ip_ranges": [
+        { "range_name": "pods",     "ip_cidr_range": "10.48.0.0/14" },
+        { "range_name": "services", "ip_cidr_range": "10.52.0.0/20" }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## Requirements
+
+| Name      | Version   |
+|-----------|-----------|
+| terraform | >= 1.3.0  |
+| google    | >= 7.23.0 |
+
+**Additional prerequisites:**
+
+- GCP credentials with the following permissions: `compute.networks.create`, `compute.subnetworks.create`, `compute.networks.delete`, `compute.subnetworks.delete`
+- Workload Identity Federation configured for CI (see CI section below)
+
+---
+
+## Inputs
+
+<!-- AUTO-GENERATED by terraform-docs — do not edit manually -->
+
+| Name         | Description                                                                                    | Type          | Default | Required |
+|:-------------|:-----------------------------------------------------------------------------------------------|:--------------|:--------|:--------:|
+| vpc\_config  | Configuration object for the VPC and its subnets — loaded from a JSON file at the call site    | `object(...)` | n/a     | **yes**  |
+
+---
 
 ## Outputs
 
-| Name | Description |
-|---|---|
-| `bucket_id` | The ID of the GCS bucket |
-| `bucket_name` | The name of the GCS bucket |
-| `bucket_project` | The project ID where the bucket is created |
-| `bucket_location` | The location of the GCS bucket |
-| `bucket_url` | The URL of the GCS bucket |
-| `bucket_self_link` | The self link of the GCS bucket resource |
-| `bucket_storage_class` | The storage class of the GCS bucket |
-| `bucket_force_destroy` | Whether force_destroy is enabled |
+<!-- AUTO-GENERATED by terraform-docs — do not edit manually -->
+
+| Name                | Description                                                                                                       |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| vpc\_id             | Fully-qualified resource ID of the VPC                                                                            |
+| vpc\_name           | Name of the VPC                                                                                                   |
+| vpc\_self\_link     | Self-link URI of the VPC                                                                                          |
+| vpc\_gateway\_ipv4  | Gateway IPv4 address assigned to the VPC                                                                          |
+| subnets             | List of subnet objects — each containing `id`, `name`, `self_link`, `region`, `ip_cidr_range`, `gateway_address`  |
+
+---
+
+## Resources
+
+| Name                                                                                                                                | Type     |
+|:------------------------------------------------------------------------------------------------------------------------------------|:---------|
+| [google_compute_network.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network)       | resource |
+| [google_compute_subnetwork.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_subnetwork) | resource |
+
+---
+
+## Examples
+
+> Each example is a standalone, runnable Terraform configuration stored in `examples/vpc/<name>/` with its own `README.md` and terraform validation.
+
+| Example                                                                | Description                                |
+| ---------------------------------------------------------------------- | ------------------------------------------ |
+| [basic](examples/vpc/basic/)                                           | Single subnet, all defaults                |
+| [with-secondary-ranges](examples/vpc/with-secondary-ranges/)           | GKE-style subnet with pod/service ranges   |
+| [with-private-google-access](examples/vpc/with-private-google-access/) | Subnet with Private Google Access enabled  |
+| [with-global-routing](examples/vpc/with-global-routing/)               | VPC with global dynamic routing            |
+| [with-multiple-subnets](examples/vpc/with-multiple-subnets/)           | Multi-region deployment with three subnets |
+| [with-delete-default-routes](examples/vpc/with-delete-default-routes/) | Delete default internet route on creation  |
+| [complete](examples/vpc/complete/)                                     | All features enabled                       |
+
+---
+
+## Notes & Caveats
+
+> **Destructive operation:** Destroying this module deletes the VPC and all subnets.
+> Ensure no GCE instances, GKE clusters, or other resources are still attached to the network before running `terraform destroy`.
+
+- **`auto_create_subnetworks` must be `false`** — the module manages subnets explicitly via `for_each`; enabling auto-creation conflicts with explicit subnet definitions.
+- **`delete_default_routes_on_create = true`** removes the `0.0.0.0/0` default route on VPC creation. Set this only for fully air-gapped or custom-routed VPCs — incorrect use blocks all internet egress.
+- **Secondary IP ranges** must not overlap with the subnet's primary CIDR or with each other. Overlapping ranges cause apply-time errors from the GCP API.
+- **`private_ip_google_access = true`** is recommended for all subnets — it allows VMs without external IPs to reach Google APIs (GCS, Artifact Registry, etc.) over internal routes.
+- **`routing_mode = GLOBAL`** advertises dynamic routes to Cloud Routers in all regions. Use this only when you have multi-region Cloud Router/VPN topologies.
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for full guidelines.
+
+```bash
+# Quick start
+git clone git@github.com:subhamay-bhattacharyya-tf/terraform-google-vpc.git
+cd terraform-google-vpc
+terraform fmt -recursive
+terraform validate
+```
+
+1. Fork the repository and create a feature branch (`git checkout -b feat/my-feature`)
+2. Run `terraform fmt`, `terraform validate`, and `terraform-docs .`
+3. Add or update tests under `test/` (Terratest)
+4. Open a pull request against `main` with a clear description of changes
+
+---
 
 ## CI / Workload Identity Federation Setup
 
@@ -62,10 +155,10 @@ The Terratest job authenticates to GCP via [Workload Identity Federation](https:
 
 ```bash
 gcloud iam service-accounts add-iam-policy-binding \
-    "sa-17-cloud-storage@prj-17-cloud-storage-16748.iam.gserviceaccount.com" \
-    --project="prj-17-cloud-storage-16748" \
+    "<service-account-email>" \
+    --project="<gcp-project-id>" \
     --role="roles/iam.workloadIdentityUser" \
-    --member="principalSet://iam.googleapis.com/projects/578842011545/locations/global/workloadIdentityPools/github-actions/attribute.repository/subhamay-bhattacharyya-tf/terraform-google-module-template"
+    --member="principalSet://iam.googleapis.com/projects/<project-number>/locations/global/workloadIdentityPools/<pool-name>/attribute.repository/<github-org>/terraform-google-vpc"
 ```
 
 The three repository variables required by the CI workflow are:
@@ -76,6 +169,8 @@ The three repository variables required by the CI workflow are:
 | `GCP_WORKLOAD_IDENTITY_PROVIDER` | Full WIF provider resource name |
 | `GCP_SERVICE_ACCOUNT` | Service account email to impersonate |
 
+---
+
 ## License
 
-Apache 2.0 — see [LICENSE](LICENSE).
+MIT © 2026 — see [LICENSE](LICENSE) for full terms.

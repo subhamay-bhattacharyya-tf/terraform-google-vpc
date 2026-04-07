@@ -1,0 +1,18 @@
+{
+  "name": "private-vpc",
+  "project": "prj-05-vpc-16748",
+  "description": "VPC with Private Google Access enabled for VMs without public IPs",
+  "auto_create_subnetworks": false,
+  "routing_mode": "REGIONAL",
+  "delete_default_routes_on_create": false,
+  "subnets": [
+    {
+      "name": "private-subnet",
+      "region": "us-central1",
+      "ip_cidr_range": "10.1.0.0/20",
+      "description": "Private subnet with Google API access",
+      "private_ip_google_access": true,
+      "secondary_ip_ranges": []
+    }
+  ]
+}

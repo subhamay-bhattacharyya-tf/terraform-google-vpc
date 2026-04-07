@@ -1,43 +1,37 @@
-# ============================================================================
-# GCS Bucket Module - Outputs
-# ============================================================================
+# =============================================================================
+# GCP VPC Module - Outputs
+# =============================================================================
 
-output "bucket_id" {
-  description = "The ID of the GCS bucket."
-  value       = google_storage_bucket.this.id
+output "vpc_id" {
+  description = "Fully-qualified resource ID of the VPC."
+  value       = google_compute_network.this.id
 }
 
-output "bucket_name" {
-  description = "The name of the GCS bucket."
-  value       = google_storage_bucket.this.name
+output "vpc_name" {
+  description = "Name of the VPC."
+  value       = google_compute_network.this.name
 }
 
-output "bucket_project" {
-  description = "The project ID where the bucket is created."
-  value       = google_storage_bucket.this.project
+output "vpc_self_link" {
+  description = "Self-link URI of the VPC."
+  value       = google_compute_network.this.self_link
 }
 
-output "bucket_location" {
-  description = "The location of the GCS bucket."
-  value       = google_storage_bucket.this.location
+output "vpc_gateway_ipv4" {
+  description = "Gateway IPv4 address assigned to the VPC."
+  value       = google_compute_network.this.gateway_ipv4
 }
 
-output "bucket_url" {
-  description = "The URL of the GCS bucket."
-  value       = google_storage_bucket.this.url
-}
-
-output "bucket_self_link" {
-  description = "The self link of the GCS bucket resource."
-  value       = google_storage_bucket.this.self_link
-}
-
-output "bucket_storage_class" {
-  description = "The storage class of the GCS bucket."
-  value       = google_storage_bucket.this.storage_class
-}
-
-output "bucket_force_destroy" {
-  description = "Whether force_destroy is enabled for the GCS bucket."
-  value       = google_storage_bucket.this.force_destroy
+output "subnets" {
+  description = "List of subnet objects — each containing id, name, self_link, region, ip_cidr_range, gateway_address."
+  value = [
+    for s in values(google_compute_subnetwork.this) : {
+      id              = s.id
+      name            = s.name
+      self_link       = s.self_link
+      region          = s.region
+      ip_cidr_range   = s.ip_cidr_range
+      gateway_address = s.gateway_address
+    }
+  ]
 }

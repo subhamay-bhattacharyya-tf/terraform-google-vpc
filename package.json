@@ -1,7 +1,7 @@
 {
-    "name": "terraform-google-module-template",
+    "name": "terraform-google-vpc",
     "version": "0.0.0",
-    "description": "Terraform module for creating and managing a Google Cloud Storage bucket with Semantic Release support.",
+    "description": "Terraform module for creating and managing a GCP VPC with multiple subnets driven by a single vpc_config JSON object.",
     "license": "MIT",
     "scripts": {
         "release": "semantic-release"
@@ -20,17 +20,17 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/subhamay-bhattacharyya-tf/terraform-google-module-template.git"
+        "url": "git+https://github.com/subhamay-bhattacharyya-tf/terraform-google-vpc.git"
     },
     "keywords": [
         "terraform",
         "gcp",
-        "gcs",
-        "storage",
+        "vpc",
+        "networking",
         "infrastructure-as-code"
     ],
     "bugs": {
-        "url": "https://github.com/subhamay-bhattacharyya-tf/terraform-google-module-template/issues"
+        "url": "https://github.com/subhamay-bhattacharyya-tf/terraform-google-vpc/issues"
     },
-    "homepage": "https://github.com/subhamay-bhattacharyya-tf/terraform-google-module-template#readme"
+    "homepage": "https://github.com/subhamay-bhattacharyya-tf/terraform-google-vpc#readme"
 }

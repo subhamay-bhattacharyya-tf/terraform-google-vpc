@@ -1,0 +1,18 @@
+{
+  "name": "basic-vpc",
+  "project": "prj-05-vpc-16748",
+  "description": "Basic VPC with a single subnet and default settings",
+  "auto_create_subnetworks": false,
+  "routing_mode": "REGIONAL",
+  "delete_default_routes_on_create": false,
+  "subnets": [
+    {
+      "name": "basic-subnet",
+      "region": "us-central1",
+      "ip_cidr_range": "10.0.0.0/20",
+      "description": "Primary subnet",
+      "private_ip_google_access": true,
+      "secondary_ip_ranges": []
+    }
+  ]
+}

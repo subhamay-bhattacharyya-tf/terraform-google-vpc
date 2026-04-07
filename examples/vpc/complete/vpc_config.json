@@ -1,0 +1,29 @@
+{
+  "name": "complete-vpc",
+  "project": "prj-05-vpc-16748",
+  "description": "Complete VPC exercising all available features",
+  "auto_create_subnetworks": false,
+  "routing_mode": "GLOBAL",
+  "delete_default_routes_on_create": false,
+  "subnets": [
+    {
+      "name": "complete-subnet-primary",
+      "region": "us-central1",
+      "ip_cidr_range": "10.0.0.0/20",
+      "description": "Primary subnet with GKE secondary ranges",
+      "private_ip_google_access": true,
+      "secondary_ip_ranges": [
+        { "range_name": "pods",     "ip_cidr_range": "10.48.0.0/14" },
+        { "range_name": "services", "ip_cidr_range": "10.52.0.0/20" }
+      ]
+    },
+    {
+      "name": "complete-subnet-secondary",
+      "region": "us-east1",
+      "ip_cidr_range": "10.1.0.0/20",
+      "description": "Secondary subnet in us-east1",
+      "private_ip_google_access": true,
+      "secondary_ip_ranges": []
+    }
+  ]
+}

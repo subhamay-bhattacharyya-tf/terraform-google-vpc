@@ -1,0 +1,21 @@
+{
+  "name": "gke-vpc",
+  "project": "prj-05-vpc-16748",
+  "description": "VPC with GKE-style secondary IP ranges for pods and services",
+  "auto_create_subnetworks": false,
+  "routing_mode": "REGIONAL",
+  "delete_default_routes_on_create": false,
+  "subnets": [
+    {
+      "name": "gke-subnet",
+      "region": "us-central1",
+      "ip_cidr_range": "10.0.0.0/20",
+      "description": "GKE node subnet",
+      "private_ip_google_access": true,
+      "secondary_ip_ranges": [
+        { "range_name": "pods",     "ip_cidr_range": "10.48.0.0/14" },
+        { "range_name": "services", "ip_cidr_range": "10.52.0.0/20" }
+      ]
+    }
+  ]
+}

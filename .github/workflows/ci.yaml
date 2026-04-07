@@ -69,7 +69,13 @@ jobs:
     strategy:
       matrix:
         example:
-          - examples/bucket/basic
+          - examples/vpc/basic
+          - examples/vpc/with-secondary-ranges
+          - examples/vpc/with-private-google-access
+          - examples/vpc/with-global-routing
+          - examples/vpc/with-multiple-subnets
+          - examples/vpc/with-delete-default-routes
+          - examples/vpc/complete
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -129,13 +135,13 @@ jobs:
           go mod download
         working-directory: test
 
-      - name: Run Terratest - GCS Bucket Basic
-        id: gcs-bucket-basic-test
+      - name: Run Terratest - VPC Basic
+        id: vpc-basic-test
         run: |
           set -o pipefail
-          go test -v -timeout 30m -run TestGCSBucketBasic \
-            ./gcs_bucket_basic_test.go ./helpers_test.go 2>&1 | tee test_output.txt
-          echo "## GCS Bucket Basic Test Results" >> $GITHUB_STEP_SUMMARY
+          go test -v -timeout 30m -run TestVpcBasic \
+            ./vpc_basic_test.go ./helpers_test.go 2>&1 | tee test_output.txt
+          echo "## VPC Basic Test Results" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           cat test_output.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -208,4 +214,4 @@ jobs:
             @semantic-release/git@10.0.1
             conventional-changelog-conventionalcommits@9.1.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

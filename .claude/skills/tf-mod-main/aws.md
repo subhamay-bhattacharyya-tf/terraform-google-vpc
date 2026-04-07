@@ -1,0 +1,3 @@
+# AWS
+
+See the full reference in [SKILL.md](SKILL.md#aws).

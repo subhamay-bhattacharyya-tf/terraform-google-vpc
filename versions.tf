@@ -11,5 +11,5 @@ terraform {
 }
 
 provider "google" {
-  region = var.region
+  project = var.vpc_config.project
 }
